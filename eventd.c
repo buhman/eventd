@@ -59,7 +59,7 @@ main(int argc,
 {
   int i;
   int nfds = 0;
-  int fd[argc - 1];
+  int *fd = calloc(argc - 1, sizeof(int));
   char name[256] = "Unknown";
 
   fd_set fds;
@@ -92,6 +92,10 @@ main(int argc,
       }
     }
   } /* ... */
-  
+
+  /*
+ cleanup:
+  free(fd);
+  */
   return 0;
 }
