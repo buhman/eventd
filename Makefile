@@ -1,7 +1,7 @@
 TARGET = eventd
-LIBS = -lasound
+LIBS = -lasound -lm
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -pedantic
 
 .PHONY: clean all default
 

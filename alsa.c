@@ -48,6 +48,8 @@ eventd_get_mixer_elem(const char *hctl_name,
     }
   } /* ... */
 
+  printf("snd_mixer_selem_id: %s/%s\n", hctl_name, selem_name);
+  
   return 0;
 }
 
@@ -63,6 +65,7 @@ eventd_elem_switch_toggle(snd_mixer_elem_t *elem)
     return err;
   }
 
+  printf("switch: %d -> %d\n", value, value ? 0 : 1);
   value = value ? 0 : 1;
   
   err = snd_mixer_selem_set_playback_switch_all(elem, value);
@@ -94,6 +97,7 @@ eventd_elem_volume_offset(snd_mixer_elem_t *elem,
     return err;
   }
 
+  printf("volume: %lu += %d\n", volume, offset);
   volume += offset;
 
   if ((volume > min) && (volume < max)) {
