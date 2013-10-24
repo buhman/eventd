@@ -1,63 +1,80 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
 #include <err.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <linux/input.h>
 
-static void read_event(int fd)
+#include "alsa.h"
+
+static snd_mixer_elem_t *elem;
+
+static void
+read_event(int fd)
 {
-	struct input_event event;
-	char type[6], code[6]; /* u16: 5 digits + null */
-	char value[12]; /* s32: 10 digits + sign + null */
+  int err;
+  struct input_event event;
 
-	read(fd, &event, sizeof(struct input_event));
-	if (event.type == 0)
-		return;
-
-	snprintf(type, sizeof(type), "%d", event.type);
-	snprintf(code, sizeof(code), "%d", event.code);
-	snprintf(value, sizeof(value), "%d", event.value);
-
-	switch (fork()) {
-		case -1:
-			err(1, "fork failed");
-			break;
-		case 0:
-			execl("./eventd.sh", "eventd.sh", type, code, value, NULL);
-			break;
-		default:
-			break;
-	}
-
-	int status;
-	wait(&status);
+  err = read(fd, &event, sizeof(struct input_event));
+  if (err < 0) {
+    switch (errno) {
+    case EAGAIN:
+      return;
+      break;
+    default:
+      perror("read()");
+      return;
+      break;
+    }
+  }
+  
+  if (event.type == 1 && (event.value == 1 || event.value == 2)) {
+    switch(event.code) {
+    case 59:
+    case 114:
+      eventd_elem_volume_offset(elem, -1);
+      break;
+    case 60:
+    case 115:
+      eventd_elem_volume_offset(elem, 1);
+      break;
+    case 61:
+    case 190:
+      eventd_elem_switch_toggle(elem);
+      break;
+    default:
+      //printf("%d, %d, %d\n", event.type, event.code, event.value);
+      break;
+    }
+  }
 }
 
-int main(int argc, char* argv[])
+int
+main(int argc,
+     char **argv)
 {
-	int fd = -1;
-	char name[256] = "Unknown";
+  int i;
+  int fd[argc - 1];
+  char name[256] = "Unknown";
 
-	if (argc < 2)
-		errx(1, "not enough arguments");
+  for (i = 0; i < argc - 1; i++) {
+    
+    fd[i] = open(argv[i + 1], O_RDONLY|O_NONBLOCK);
+    
+    if (fd < 0)
+      err(1, "evdev open failed");
 
-	fd = open(argv[1], O_RDONLY);
-	if (fd < 0)
-		err(1, "evdev open failed");
+    if (ioctl(fd[i], EVIOCGNAME(sizeof(name)), name) < 0)
+      err(1, "evdev ioctl failed");
 
-	if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) < 0)
-		err(1, "evdev ioctl failed");
+    printf("%s: %s\n", argv[i + 1], name);
+  }
+  
+  if (eventd_get_mixer_elem("default", "Master", &elem) < 0)
+    return 1;
+  
+  while (1)
+    for (i = 0; i < argc - 1; i++)
+      read_event(fd[i]);
 
-	printf("The device on %s says its name is %s\n", argv[1], name);
-
-	while (1)
-		read_event(fd);
-
-	close(fd);
-	return 0;
+  return 0;
 }

@@ -1,18 +1,24 @@
-# VERSION = $(shell git describe --tags)
+TARGET = eventd
+LIBS = -lasound
+CC = gcc
+CFLAGS = -g -Wall
 
-CFLAGS := -std=c99 \
-	-Wall -Wextra -pedantic \
-	-Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes \
-	-D_GNU_SOURCE \
-	${CFLAGS}
+.PHONY: clean all default
 
-LDLIBS = -larchive -lalpm -lgpgme -lcrypto -lssl
-PREFIX = /usr
+default: $(TARGET)
+all: default
 
-all: eventd
-eventd: eventd.o
+OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
+HEADERS = $(wildcard *.h)
+
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PRECIOUS: $(TARGET) $(OBJECTS)
+
+$(TARGET): $(OBJECTS)
+	$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
 
 clean:
-	${RM} eventd *.o
-
-.PHONY: clean install uninstall
+	-rm -f *.o
+	-rm -f $(TARGET)
