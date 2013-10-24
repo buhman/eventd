@@ -9,6 +9,7 @@
 #include "alsa.h"
 
 static snd_mixer_elem_t *elem;
+static snd_mixer_t *mixer;
 
 static void
 read_event(int fd)
@@ -57,7 +58,7 @@ int
 main(int argc,
      char **argv)
 {
-  int i;
+  int i, ret;
   int nfds = 0;
   int *fd = calloc(argc - 1, sizeof(int));
   char name[256] = "Unknown";
@@ -80,12 +81,16 @@ main(int argc,
     printf("%s(%d): %s\n", argv[i + 1], fd[i], name);
   }
   
-  if (eventd_get_mixer_elem("default", "Master", &elem) < 0)
+  if (eventd_get_mixer_elem("default", "Master", &mixer, &elem) < 0)
     return 1;
 
   {
     while (1) {
-      select(nfds + 2, &fds, NULL, NULL, NULL);
+      ret = select(nfds + 2, &fds, NULL, NULL, NULL);
+      if (ret < 0) {
+	perror("select()");
+	FD_ZERO(&fds);
+      }
       for (i = 0; i < argc - 1; i++) {
 	if (FD_ISSET(fd[i], &fds))
 	  read_event(fd[i]);
@@ -96,7 +101,10 @@ main(int argc,
 
   /*
  cleanup:
+  for (i = 0; i > argc - 1; i++)
+    close(fd[i]);
   free(fd);
+  snd_mixer_close(mixer);
   */
   return 0;
 }
