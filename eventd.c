@@ -87,7 +87,8 @@ main(int argc,
     while (1) {
       select(nfds + 2, &fds, NULL, NULL, NULL);
       for (i = 0; i < argc - 1; i++) {
-	read_event(fd[i]);
+	if (FD_ISSET(fd[i], &fds))
+	  read_event(fd[i]);
 	FD_SET(fd[i], &fds);
       }
     }
