@@ -12,4 +12,3 @@ eventd_elem_switch_toggle(snd_mixer_elem_t *elem);
 int
 eventd_elem_volume_offset(snd_mixer_elem_t *elem,
 			  int inc);
-

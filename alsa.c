@@ -7,7 +7,7 @@ eventd_get_mixer_elem(const char *hctl_name,
 		      snd_mixer_elem_t **elem)
 {
   int err;
-  
+
   snd_mixer_selem_id_t *sid;
 
   {
@@ -22,20 +22,20 @@ eventd_get_mixer_elem(const char *hctl_name,
       printf("snd_mixer_attach(): %s\n", snd_strerror(err));
       return err;
     }
-  
+
     err = snd_mixer_selem_register(*mixer, NULL, NULL);
     if (err < 0) {
       printf("snd_mixer_selem_register(): %s\n", snd_strerror(err));
       return err;
     }
-    
+
     err = snd_mixer_load(*mixer);
     if (err < 0) {
       printf("snd_mixer_load(): %s\n", snd_strerror(err));
       return err;
     }
   } /* ... */
-  
+
   {
     snd_mixer_selem_id_alloca(&sid);
 
@@ -49,7 +49,7 @@ eventd_get_mixer_elem(const char *hctl_name,
   } /* ... */
 
   printf("snd_mixer_selem_id: %s/%s\n", hctl_name, selem_name);
-  
+
   return 0;
 }
 
@@ -66,7 +66,7 @@ eventd_elem_switch_toggle(snd_mixer_elem_t *elem)
   }
 
   printf("switch: %d -> %d\n", value, value ? 0 : 1);
-  
+
   err = snd_mixer_selem_set_playback_switch_all(elem, value ? 0 : 1);
   if (err < 0) {
     printf("snd_mixer_selem_set_playback_switch_all(): %s\n", snd_strerror(err));
@@ -88,7 +88,7 @@ eventd_elem_volume_offset(snd_mixer_elem_t *elem,
 	   snd_strerror(err));
     return err;
   }
-  
+
   err = snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_UNKNOWN,
 					    &volume);
   if (err < 0) {

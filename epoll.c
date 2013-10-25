@@ -12,9 +12,9 @@ eventd_epoll_add_dev(const char *devnode,
   int err;
   struct epoll_event ev;
   char name[256] = "Unknown";
-  
+
   ev.events = EPOLLIN;
-  
+
   {
     ev.data.fd = open(devnode, O_RDONLY|O_NONBLOCK|O_CLOEXEC);
     if (ev.data.fd < 0) {
@@ -30,9 +30,9 @@ eventd_epoll_add_dev(const char *devnode,
       return err;
     }
 
-    printf("%s(%d): %s\n", devnode, ev.data.fd, name);
+    printf("%s: fd%d: %s\n", devnode, ev.data.fd, name);
   } /* ... */
-      
+
   {
     err = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev.data.fd, &ev);
     if (err < 0) {

@@ -32,7 +32,7 @@ read_event(int fd)
       break;
     }
   }
-  
+
   if (event.type == EV_KEY && (event.value == 1 || event.value == 2)) {
     switch(event.code) {
     case KEY_F1: //59
@@ -70,10 +70,10 @@ main(int argc,
       perror("epoll_create1()");
       return EXIT_FAILURE;
     }
-    
+
     epoll_eventc = 0;
   } /* ... */
-  
+
   {
     err = eventd_get_mixer_elem("default", "Master", &mixer, &elem);
     if (err < 0) {
@@ -89,12 +89,12 @@ main(int argc,
       return EXIT_FAILURE;
     }
   }
-  
+
   {
     const char *devnode;
-    
+
     while(eventd_udev_next_device(udev_ctx, &devnode)) {
-      
+
       err = eventd_epoll_add_dev(devnode, epoll_fd);
       if (err < 0) {
 	perror("eventd_udev_next_device");
@@ -112,10 +112,10 @@ main(int argc,
       return EXIT_FAILURE;
     }
   } /* ... */
-  
+
   {
     int n, i;
-    
+
     while (1) {
 
       n = epoll_wait(epoll_fd, events, epoll_eventc, -1);

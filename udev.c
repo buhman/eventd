@@ -19,7 +19,7 @@ eventd_udev_enumerate(eventd_udev_context_t **u_ctx,
       return -1;
     }
   }
-  
+
   {
     ctx->u = udev_new();
     if (!(ctx->u)) {
@@ -40,18 +40,18 @@ eventd_udev_enumerate(eventd_udev_context_t **u_ctx,
       fprintf(stderr, "udev_enumerate_add_match_subsystem(): %d\n", err);
       return err;
     }
-    
+
     err = udev_enumerate_add_match_property(ctx->ue, property, "1");
     if (err < 0) {
       fprintf(stderr, "udev_enumerate_add_match_property(): %d\n", err);
       return err;
     }
-    
+
     err = udev_enumerate_scan_devices(ctx->ue);
     if (err < 0) {
       fprintf(stderr, "udev_enumerate_scan_devices(): %d\n", err);
       return err;
-    }    
+    }
   } /* ... */
 
   {
@@ -65,7 +65,7 @@ eventd_udev_enumerate(eventd_udev_context_t **u_ctx,
   {
     *u_ctx = ctx;
   }
-  
+
   return 0;
 }
 
@@ -78,11 +78,11 @@ eventd_udev_next_device(eventd_udev_context_t *u_ctx,
 
   if (!(u_ctx->le))
     return 0;
-  
+
   while (1) {
     syspath = udev_list_entry_get_name(u_ctx->le);
     u_device = udev_device_new_from_syspath(u_ctx->u, syspath);
- 
+
     *devnode = udev_device_get_devnode(u_device);
     if (*devnode) {
       break;
@@ -91,7 +91,7 @@ eventd_udev_next_device(eventd_udev_context_t *u_ctx,
     u_ctx->le = udev_list_entry_get_next(u_ctx->le);
     u_device = udev_device_unref(u_device);
   } /* ... */
-  
+
   u_ctx->le = udev_list_entry_get_next(u_ctx->le);
   /*u_device = udev_device_unref(u_device); FIXME*/
 
