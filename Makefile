@@ -1,7 +1,7 @@
 TARGET = eventd
-LIBS = -lasound -lm
+LIBS = -lasound -lm -ludev
 CC = gcc
-CFLAGS = -g -Wall -pedantic
+CFLAGS = -g -Wall -pedantic -std=c99 -D_GNU_SOURCE
 
 .PHONY: clean all default
 

@@ -1,10 +1,11 @@
 #include <stdio.h>
-#include <err.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <linux/input.h>
-#include <sys/select.h>
 #include <math.h>
+
+#include <sys/epoll.h>
+#include <linux/input.h>
 
 #include "alsa.h"
 
@@ -30,20 +31,20 @@ read_event(int fd)
     }
   }
   
-  if (event.type == 1 && (event.value == 1 || event.value == 2)) {
+  if (event.type == EV_KEY && (event.value == 1 || event.value == 2)) {
     switch(event.code) {
-    case 59:
-    case 114:
+    case KEY_F1: //59
+    case KEY_VOLUMEDOWN: //114
       printf("fd %d: keycode %d: ", fd, event.code);
       eventd_elem_volume_offset(elem, -1);
       break;
-    case 60:
-    case 115:
+    case KEY_F2: //60
+    case KEY_VOLUMEUP: //115
       printf("fd %d: keycode %d: ", fd, event.code);
       eventd_elem_volume_offset(elem, 1);
       break;
-    case 61:
-    case 190:
+    case KEY_F3: //61
+    case KEY_F20: //190
       printf("fd %d: keycode %d: ", fd, event.code);
       eventd_elem_switch_toggle(elem);
       break;
@@ -58,43 +59,80 @@ int
 main(int argc,
      char **argv)
 {
-  int i, ret;
-  int nfds = 0;
-  int *fd = calloc(argc - 1, sizeof(int));
+  int err, epoll_fd, epoll_eventc;
+  struct epoll_event ev, *events;
+  
   char name[256] = "Unknown";
 
-  fd_set fds;
-  FD_ZERO(&fds);
-  
-  for (i = 0; i < argc - 1; i++) {
+  {
+    epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+    if (epoll_fd < 0) {
+      perror("epoll_create1()");
+      return EXIT_FAILURE;
+    }
     
-    fd[i] = open(argv[i + 1], O_RDONLY|O_NONBLOCK);
-    FD_SET(fd[i], &fds);
-    nfds = fmax(nfds, fd[i]);
-    
-    if (fd[i] < 0)
-      err(1, "evdev open failed");
-
-    if (ioctl(fd[i], EVIOCGNAME(sizeof(name)), name) < 0)
-      err(1, "evdev ioctl failed");
-
-    printf("%s(%d): %s\n", argv[i + 1], fd[i], name);
-  }
+    epoll_eventc = 0;
+    ev.events = EPOLLIN;      
+  } /* ... */
   
-  if (eventd_get_mixer_elem("default", "Master", &mixer, &elem) < 0)
-    return 1;
+  {
+    err = eventd_get_mixer_elem("default", "Master", &mixer, &elem);
+    if (err < 0) {
+      perror("eventd_get_mixer_elem()");
+      return EXIT_FAILURE;
+    }
+  } /* ... */
 
   {
-    while (1) {
-      ret = select(nfds + 2, &fds, NULL, NULL, NULL);
-      if (ret < 0) {
-	perror("select()");
-	FD_ZERO(&fds);
+    int i;
+    
+    for (i = 0; i < argc - 1; i++) {
+    
+      ev.data.fd = open(argv[i + 1], O_RDONLY|O_NONBLOCK|O_CLOEXEC);
+      if (ev.data.fd < 0) {
+	perror("open()");
+	return EXIT_FAILURE;
       }
-      for (i = 0; i < argc - 1; i++) {
-	if (FD_ISSET(fd[i], &fds))
-	  read_event(fd[i]);
-	FD_SET(fd[i], &fds);
+
+      {
+	err = ioctl(ev.data.fd, EVIOCGNAME(sizeof(name)), name);
+	if (err < 0) {
+	  perror("ioctl()");
+	  return EXIT_FAILURE;
+	}
+
+	printf("%s(%d): %s\n", argv[i + 1], ev.data.fd, name);
+      } /* ... */
+      
+      {
+	err = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev.data.fd, &ev);
+	if (err < 0) {
+	  perror("epoll_ctl()");
+	  return EXIT_FAILURE;
+	}
+	epoll_eventc++;
+      } /* ... */
+    }
+  } /* ... */
+
+  {
+    events = calloc(epoll_eventc, sizeof(struct epoll_event));
+    if (!events) {
+      perror("calloc()");
+      return EXIT_FAILURE;
+    }
+  } /* ... */
+  
+  {
+    int n, i;
+    
+    while (1) {
+
+      n = epoll_wait(epoll_fd, events, epoll_eventc, -1);
+      for (i = 0; i < n; i++) {
+	if (events[i].events & EPOLLIN) {
+	  read_event(events[i].data.fd);
+	}
       }
     }
   } /* ... */
