@@ -8,9 +8,11 @@
 #include <linux/input.h>
 
 #include "alsa.h"
+#include "udev.h"
 
 static snd_mixer_elem_t *elem;
 static snd_mixer_t *mixer;
+static eventd_udev_context_t *udev_ctx;
 
 static void
 read_event(int fd)
@@ -84,11 +86,19 @@ main(int argc,
   } /* ... */
 
   {
-    int i;
+    err = eventd_udev_enumerate(&udev_ctx, "input", "ID_INPUT_KEY");
+    if (err < 0) {
+      perror("eventd_udev_enumerate()");
+      return EXIT_FAILURE;
+    }
+  }
+  
+  {
+    const char *devnode;
     
-    for (i = 0; i < argc - 1; i++) {
-    
-      ev.data.fd = open(argv[i + 1], O_RDONLY|O_NONBLOCK|O_CLOEXEC);
+    while(eventd_udev_next_device(udev_ctx, &devnode)) {
+
+      ev.data.fd = open(devnode, O_RDONLY|O_NONBLOCK|O_CLOEXEC);
       if (ev.data.fd < 0) {
 	perror("open()");
 	return EXIT_FAILURE;
@@ -101,7 +111,7 @@ main(int argc,
 	  return EXIT_FAILURE;
 	}
 
-	printf("%s(%d): %s\n", argv[i + 1], ev.data.fd, name);
+	printf("%s(%d): %s\n", devnode, ev.data.fd, name);
       } /* ... */
       
       {
@@ -113,6 +123,7 @@ main(int argc,
 	epoll_eventc++;
       } /* ... */
     }
+
   } /* ... */
 
   {
@@ -143,6 +154,7 @@ main(int argc,
     close(fd[i]);
   free(fd);
   snd_mixer_close(mixer);
+  eventd_udev_unref(&udev_ctx);
   */
   return 0;
 }
