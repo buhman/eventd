@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <math.h>
 
@@ -9,6 +8,7 @@
 
 #include "alsa.h"
 #include "udev.h"
+#include "epoll.h"
 
 static snd_mixer_elem_t *elem;
 static snd_mixer_t *mixer;
@@ -62,9 +62,7 @@ main(int argc,
      char **argv)
 {
   int err, epoll_fd, epoll_eventc;
-  struct epoll_event ev, *events;
-  
-  char name[256] = "Unknown";
+  struct epoll_event *events;
 
   {
     epoll_fd = epoll_create1(EPOLL_CLOEXEC);
@@ -74,7 +72,6 @@ main(int argc,
     }
     
     epoll_eventc = 0;
-    ev.events = EPOLLIN;      
   } /* ... */
   
   {
@@ -97,31 +94,13 @@ main(int argc,
     const char *devnode;
     
     while(eventd_udev_next_device(udev_ctx, &devnode)) {
-
-      ev.data.fd = open(devnode, O_RDONLY|O_NONBLOCK|O_CLOEXEC);
-      if (ev.data.fd < 0) {
-	perror("open()");
+      
+      err = eventd_epoll_add_dev(devnode, epoll_fd);
+      if (err < 0) {
+	perror("eventd_udev_next_device");
 	return EXIT_FAILURE;
       }
-
-      {
-	err = ioctl(ev.data.fd, EVIOCGNAME(sizeof(name)), name);
-	if (err < 0) {
-	  perror("ioctl()");
-	  return EXIT_FAILURE;
-	}
-
-	printf("%s(%d): %s\n", devnode, ev.data.fd, name);
-      } /* ... */
-      
-      {
-	err = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev.data.fd, &ev);
-	if (err < 0) {
-	  perror("epoll_ctl()");
-	  return EXIT_FAILURE;
-	}
-	epoll_eventc++;
-      } /* ... */
+      epoll_eventc++;
     }
 
   } /* ... */

@@ -76,13 +76,17 @@ eventd_udev_next_device(eventd_udev_context_t *u_ctx,
   struct udev_device *u_device = NULL;
   const char *syspath;
 
+  if (!(u_ctx->le))
+    return 0;
+  
   while (1) {
     syspath = udev_list_entry_get_name(u_ctx->le);
     u_device = udev_device_new_from_syspath(u_ctx->u, syspath);
  
     *devnode = udev_device_get_devnode(u_device);
-    if (*devnode)
+    if (*devnode) {
       break;
+    }
 
     u_ctx->le = udev_list_entry_get_next(u_ctx->le);
     u_device = udev_device_unref(u_device);
@@ -91,7 +95,7 @@ eventd_udev_next_device(eventd_udev_context_t *u_ctx,
   u_ctx->le = udev_list_entry_get_next(u_ctx->le);
   /*u_device = udev_device_unref(u_device); FIXME*/
 
-  return u_ctx->le ? 1 : 0;
+  return 1;
 }
 
 void
