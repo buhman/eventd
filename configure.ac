@@ -8,7 +8,7 @@ AC_CONFIG_HEADERS([config.h])
 
 #
 
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([1.11 foreign])
 AC_PROG_CC_C99
 
 # Check for libraries.
@@ -21,12 +21,8 @@ AC_CHECK_HEADERS([fcntl.h stdlib.h sys/ioctl.h unistd.h])
 AC_FUNC_MALLOC
 
 PKG_CHECK_MODULES(ALSA, [alsa])
-AC_SUBST(alsa_CFLAGS)
-AC_SUBST(alsa_LIBS)
 
 PKG_CHECK_MODULES(UDEV, [libudev])
-AC_SUBST(udev_CFLAGS)
-AC_SUBST(udev_LIBS)
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile])
