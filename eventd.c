@@ -33,8 +33,10 @@ read_event(int fd)
     }
   }
 
+
   if (event.type == EV_KEY && (event.value == 1 || event.value == 2)) {
     switch(event.code) {
+    /*
     case KEY_F1: //59
     case KEY_VOLUMEDOWN: //114
       printf("fd %d: keycode %d: ", fd, event.code);
@@ -50,8 +52,9 @@ read_event(int fd)
       printf("fd %d: keycode %d: ", fd, event.code);
       eventd_elem_switch_toggle(elem);
       break;
+    */
     default:
-      /*printf("%d, %d, %d\n", event.type, event.code, event.value);*/
+      printf("%d: %d, %d, %d\n", fd, event.type, event.code, event.value);
       break;
     }
   }
@@ -74,16 +77,17 @@ main(int argc,
     epoll_eventc = 0;
   } /* ... */
 
+  /*
   {
     err = eventd_get_mixer_elem("default", "Master", &mixer, &elem);
     if (err < 0) {
       perror("eventd_get_mixer_elem()");
       return EXIT_FAILURE;
     }
-  } /* ... */
+  }  ... */
 
   {
-    err = eventd_udev_enumerate(&udev_ctx, "input", "ID_INPUT_KEY");
+    err = eventd_udev_enumerate(&udev_ctx, "input", "ID_INPUT");
     if (err < 0) {
       perror("eventd_udev_enumerate()");
       return EXIT_FAILURE;
@@ -97,8 +101,8 @@ main(int argc,
 
       err = eventd_epoll_add_dev(devnode, epoll_fd);
       if (err < 0) {
-	perror("eventd_udev_next_device");
-	return EXIT_FAILURE;
+        fprintf(stderr, "not not looking at: %s\n", devnode);
+        continue;
       }
       epoll_eventc++;
     }

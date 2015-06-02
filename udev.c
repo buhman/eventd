@@ -41,11 +41,13 @@ eventd_udev_enumerate(eventd_udev_context_t **u_ctx,
       return err;
     }
 
+    /*
     err = udev_enumerate_add_match_property(ctx->ue, property, "1");
     if (err < 0) {
       fprintf(stderr, "udev_enumerate_add_match_property(): %d\n", err);
       return err;
     }
+    */
 
     err = udev_enumerate_scan_devices(ctx->ue);
     if (err < 0) {
